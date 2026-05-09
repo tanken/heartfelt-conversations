@@ -14,7 +14,215 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      answers: {
+        Row: {
+          card_id: string
+          created_at: string
+          id: string
+          is_reflection: boolean
+          is_shared: boolean
+          is_spiral: boolean
+          layer: number
+          player_id: string | null
+          player_name: string
+          session_id: string
+          text: string
+        }
+        Insert: {
+          card_id: string
+          created_at?: string
+          id?: string
+          is_reflection?: boolean
+          is_shared?: boolean
+          is_spiral?: boolean
+          layer: number
+          player_id?: string | null
+          player_name: string
+          session_id: string
+          text: string
+        }
+        Update: {
+          card_id?: string
+          created_at?: string
+          id?: string
+          is_reflection?: boolean
+          is_shared?: boolean
+          is_spiral?: boolean
+          layer?: number
+          player_id?: string | null
+          player_name?: string
+          session_id?: string
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "answers_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "answers_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "session_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "answers_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cards: {
+        Row: {
+          created_at: string
+          deck_id: string
+          id: string
+          layer: number
+          prompt: string
+        }
+        Insert: {
+          created_at?: string
+          deck_id: string
+          id?: string
+          layer: number
+          prompt: string
+        }
+        Update: {
+          created_at?: string
+          deck_id?: string
+          id?: string
+          layer?: number
+          prompt?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cards_deck_id_fkey"
+            columns: ["deck_id"]
+            isOneToOne: false
+            referencedRelation: "decks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      decks: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      session_players: {
+        Row: {
+          display_name: string
+          id: string
+          joined_at: string
+          session_id: string
+          turn_order: number
+        }
+        Insert: {
+          display_name: string
+          id?: string
+          joined_at?: string
+          session_id: string
+          turn_order?: number
+        }
+        Update: {
+          display_name?: string
+          id?: string
+          joined_at?: string
+          session_id?: string
+          turn_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_players_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sessions: {
+        Row: {
+          closed_at: string | null
+          created_at: string
+          current_card_id: string | null
+          current_layer: number
+          current_player_id: string | null
+          deck_id: string
+          host_name: string | null
+          id: string
+          mode: string
+          room_code: string | null
+          status: string
+        }
+        Insert: {
+          closed_at?: string | null
+          created_at?: string
+          current_card_id?: string | null
+          current_layer?: number
+          current_player_id?: string | null
+          deck_id: string
+          host_name?: string | null
+          id?: string
+          mode: string
+          room_code?: string | null
+          status?: string
+        }
+        Update: {
+          closed_at?: string | null
+          created_at?: string
+          current_card_id?: string | null
+          current_layer?: number
+          current_player_id?: string | null
+          deck_id?: string
+          host_name?: string | null
+          id?: string
+          mode?: string
+          room_code?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessions_current_card_id_fkey"
+            columns: ["current_card_id"]
+            isOneToOne: false
+            referencedRelation: "cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sessions_deck_id_fkey"
+            columns: ["deck_id"]
+            isOneToOne: false
+            referencedRelation: "decks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
