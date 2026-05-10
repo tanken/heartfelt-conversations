@@ -60,8 +60,8 @@ function SharedRecap() {
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
+    trackShareClick("session", id);
     (async () => {
-      // Try by share_token first, then by raw id
       let s = await supabase.from("sessions").select("id").eq("share_token", id).maybeSingle();
       if (!s.data) {
         s = await supabase.from("sessions").select("id").eq("id", id).maybeSingle();
@@ -70,10 +70,10 @@ function SharedRecap() {
       setSessionId(s.data.id);
       const { data: a } = await supabase
         .from("answers")
-        .select("id, card_id, layer, player_name, text, is_reflection, is_spiral")
+        .select("id, card_id, layer, player_name, text, is_reflection, is_spiral, is_hidden")
         .eq("session_id", s.data.id)
         .order("created_at");
-      setAnswers((a ?? []) as AnswerRow[]);
+      setAnswers((a ?? []).filter((x) => !x.is_hidden) as AnswerRow[]);
       const cardIds = Array.from(new Set((a ?? []).map((x) => x.card_id)));
       if (cardIds.length) {
         const { data: cs } = await supabase.from("cards").select("id, prompt").in("id", cardIds);
