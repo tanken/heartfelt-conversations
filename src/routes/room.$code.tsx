@@ -279,6 +279,7 @@ function Room() {
       token = makeToken();
       await supabase.from("sessions").update({ share_token: token, status: "closed", closed_at: new Date().toISOString() }).eq("id", session.id);
     }
+    forgetRoom(code);
     navigate({ to: "/recap/$id", params: { id: token } });
   }
 
@@ -287,13 +288,20 @@ function Room() {
   return (
     <div className="min-h-screen">
       <SiteHead />
+      {connState === "reconnecting" && (
+        <div role="status" aria-live="polite" className="max-w-2xl mx-auto px-6 mb-2">
+          <div className="text-xs text-center px-3 py-1.5 rounded-full bg-accent/20 border border-accent/40 text-accent inline-block">
+            Reconnecting…
+          </div>
+        </div>
+      )}
       <div className="max-w-2xl mx-auto px-6 mb-3 flex items-center justify-between flex-wrap gap-2">
         <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
           Room <span className="text-gold tracking-[0.4em]">{code}</span>
         </div>
         <div className="flex items-center gap-3">
-          <CopyButton value={code} className="text-xs text-muted-foreground hover:text-cream">Copy code</CopyButton>
-          <CopyButton value={inviteUrl} className="text-xs text-gold hover:underline">Copy invite link</CopyButton>
+          <CopyButton value={code} className="text-xs text-muted-foreground hover:text-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 rounded">Copy code</CopyButton>
+          <CopyButton value={inviteUrl} className="text-xs text-gold hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 rounded">Copy invite link</CopyButton>
         </div>
       </div>
 
