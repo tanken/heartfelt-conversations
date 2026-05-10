@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Spiral } from "@/components/Spiral";
 import { SiteHead } from "@/components/SiteHead";
@@ -9,13 +10,16 @@ export const Route = createFileRoute("/")({
 });
 
 function Landing() {
+  const [code, setCode] = useState("");
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen flex flex-col">
       <SiteHead />
 
       <main className="relative z-10 flex-1 px-6">
         {/* Hero */}
-        <section className="max-w-5xl mx-auto pt-10 pb-24 md:pt-20 md:pb-32 grid md:grid-cols-2 gap-10 items-center">
+        <section className="max-w-5xl mx-auto pt-8 pb-20 md:pt-16 md:pb-28 grid md:grid-cols-2 gap-10 items-center">
           <div>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -41,34 +45,69 @@ function Landing() {
               className="mt-6 text-lg text-muted-foreground max-w-md text-pretty"
             >
               Five layers. One card at a time. Turn vulnerability into a game you actually want to play —
-              alone, in person, or live with anyone in the world.
+              alone, in person, live, or async.
             </motion.p>
 
+            {/* Three primary CTAs */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.25 }}
-              className="mt-10 flex flex-wrap gap-3"
+              className="mt-10 grid sm:grid-cols-3 gap-3"
             >
               <Link
-                to="/play/local"
-                className="inline-flex items-center justify-center px-6 py-3 rounded-full bg-gold text-primary-foreground font-medium shadow-glow hover:scale-[1.02] transition"
+                to="/play/solo"
+                className="rounded-2xl p-4 bg-card/60 border border-border hover:bg-card transition group"
               >
-                Start a session
+                <div className="text-xs uppercase tracking-widest text-muted-foreground">01</div>
+                <div className="font-display text-xl mt-1 group-hover:text-gold transition">Solo</div>
+                <div className="text-xs text-muted-foreground mt-1">A private journal.</div>
+              </Link>
+              <Link
+                to="/play/local"
+                className="rounded-2xl p-4 bg-card/60 border border-border hover:bg-card transition group"
+              >
+                <div className="text-xs uppercase tracking-widest text-muted-foreground">02</div>
+                <div className="font-display text-xl mt-1 group-hover:text-gold transition">In-person</div>
+                <div className="text-xs text-muted-foreground mt-1">Pass the device.</div>
               </Link>
               <Link
                 to="/room/new"
-                className="inline-flex items-center justify-center px-6 py-3 rounded-full border border-border text-cream hover:bg-secondary/60 transition"
+                className="rounded-2xl p-4 bg-gold text-primary-foreground hover:scale-[1.02] transition shadow-glow"
               >
-                Create a live room
-              </Link>
-              <Link
-                to="/play/solo"
-                className="inline-flex items-center justify-center px-6 py-3 rounded-full text-muted-foreground hover:text-cream transition"
-              >
-                Play solo →
+                <div className="text-xs uppercase tracking-widest opacity-60">03</div>
+                <div className="font-display text-xl mt-1">Live room</div>
+                <div className="text-xs opacity-70 mt-1">Spiral with anyone.</div>
               </Link>
             </motion.div>
+
+            {/* Join with code */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="mt-6 flex items-center gap-2"
+            >
+              <input
+                value={code}
+                onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 6))}
+                onKeyDown={(e) => e.key === "Enter" && code.length === 6 && navigate({ to: "/room/$code", params: { code } })}
+                placeholder="Have a code? ABCDEF"
+                className="flex-1 bg-card/40 border border-border rounded-full px-4 py-2.5 tracking-[0.3em] uppercase text-center placeholder:tracking-normal placeholder:normal-case placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-gold/40"
+              />
+              <button
+                disabled={code.length !== 6}
+                onClick={() => navigate({ to: "/room/$code", params: { code } })}
+                className="px-5 py-2.5 rounded-full border border-gold/60 text-gold hover:bg-gold/10 disabled:opacity-30 transition"
+              >
+                Join
+              </button>
+            </motion.div>
+
+            <div className="mt-4 text-xs text-muted-foreground">
+              or{" "}
+              <Link to="/async/new" className="text-gold hover:underline">send an async card →</Link>
+            </div>
           </div>
 
           <motion.div
@@ -79,6 +118,7 @@ function Landing() {
           >
             <div className="absolute inset-0 bg-gold/20 blur-3xl rounded-full" />
             <Spiral size={380} className="relative" />
+            <SpiralTrailer />
           </motion.div>
         </section>
 
@@ -113,7 +153,7 @@ function Landing() {
             {[
               { t: "Draw", d: "A card surfaces from the current layer. No two sessions repeat." },
               { t: "Choose", d: "Answer honestly, reflect privately, or pull everyone into the spiral." },
-              { t: "Share", d: "Beautiful answer cards. Connection recaps. Made for the feed." },
+              { t: "Share", d: "Export beautiful answer cards and connection recaps. Made for the feed." },
             ].map((s, i) => (
               <div key={s.t} className="rounded-2xl p-6 bg-card/40 border border-border">
                 <div className="font-display text-3xl text-gold">0{i + 1}</div>
@@ -128,6 +168,39 @@ function Landing() {
       <footer className="relative z-10 px-6 py-8 text-center text-xs text-muted-foreground border-t border-border/40">
         Made for deeper conversations.
       </footer>
+    </div>
+  );
+}
+
+const TRAILER_PROMPTS = [
+  "What did you almost say today?",
+  "When did you last feel truly seen?",
+  "What part of you do you hide?",
+  "What's the lie you most often tell yourself?",
+  "What would you regret never saying?",
+];
+
+function SpiralTrailer() {
+  return (
+    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-[260px] h-12 overflow-hidden">
+      <motion.div
+        animate={{ y: [0, -48, -96, -144, -192, -240] }}
+        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+        className="flex flex-col gap-0"
+      >
+        {TRAILER_PROMPTS.map((p, i) => (
+          <div
+            key={i}
+            className="h-12 flex items-center justify-center text-center text-sm italic font-display"
+            style={{ color: LAYERS[i % 5].color }}
+          >
+            "{p}"
+          </div>
+        ))}
+        <div className="h-12 flex items-center justify-center text-center text-sm italic font-display" style={{ color: LAYERS[0].color }}>
+          "{TRAILER_PROMPTS[0]}"
+        </div>
+      </motion.div>
     </div>
   );
 }

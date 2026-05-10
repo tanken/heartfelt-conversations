@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       answers: {
         Row: {
+          avatar_key: string | null
           card_id: string
           created_at: string
           id: string
@@ -29,6 +30,7 @@ export type Database = {
           text: string
         }
         Insert: {
+          avatar_key?: string | null
           card_id: string
           created_at?: string
           id?: string
@@ -42,6 +44,7 @@ export type Database = {
           text: string
         }
         Update: {
+          avatar_key?: string | null
           card_id?: string
           created_at?: string
           id?: string
@@ -136,6 +139,7 @@ export type Database = {
       }
       session_players: {
         Row: {
+          avatar_key: string | null
           display_name: string
           id: string
           joined_at: string
@@ -143,6 +147,7 @@ export type Database = {
           turn_order: number
         }
         Insert: {
+          avatar_key?: string | null
           display_name: string
           id?: string
           joined_at?: string
@@ -150,6 +155,7 @@ export type Database = {
           turn_order?: number
         }
         Update: {
+          avatar_key?: string | null
           display_name?: string
           id?: string
           joined_at?: string
@@ -178,6 +184,7 @@ export type Database = {
           id: string
           mode: string
           room_code: string | null
+          share_token: string | null
           status: string
         }
         Insert: {
@@ -191,6 +198,7 @@ export type Database = {
           id?: string
           mode: string
           room_code?: string | null
+          share_token?: string | null
           status?: string
         }
         Update: {
@@ -204,6 +212,7 @@ export type Database = {
           id?: string
           mode?: string
           room_code?: string | null
+          share_token?: string | null
           status?: string
         }
         Relationships: [

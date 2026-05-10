@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "@tanstack/react-router";
 import { layerInfo, LAYERS, type SpiralAction } from "@/lib/spiral";
+import { shareAnswer } from "@/lib/share";
 
 export type GameCard = { id: string; layer: number; prompt: string };
 export type GameAnswer = {
@@ -34,6 +35,8 @@ interface CardStageProps {
   activePlayer?: string;
   /** Hook called when picking next card (live rooms). */
   onPickNext?: (card: GameCard) => void;
+  /** When true, answers shown have real DB ids and a Share button appears. */
+  dbBacked?: boolean;
 }
 
 export function CardStage({
@@ -47,6 +50,7 @@ export function CardStage({
   canPlay = true,
   activePlayer,
   onPickNext,
+  dbBacked = false,
 }: CardStageProps) {
   const [layer, setLayer] = useState(1);
   const [internalCard, setInternalCard] = useState<GameCard | null>(null);
@@ -227,6 +231,17 @@ export function CardStage({
                 <p className="font-display mt-1 text-cream/95">{a.prompt}</p>
                 {a.action !== "reflect" && (
                   <p className="text-sm text-muted-foreground mt-1 italic">"{a.text}"</p>
+                )}
+                {dbBacked && a.action !== "reflect" && (
+                  <button
+                    onClick={async () => {
+                      const url = await shareAnswer(a.id);
+                      window.open(url, "_blank");
+                    }}
+                    className="mt-2 text-[11px] uppercase tracking-widest text-gold hover:underline"
+                  >
+                    Share this answer →
+                  </button>
                 )}
               </li>
             ))}

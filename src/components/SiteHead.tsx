@@ -7,10 +7,11 @@ export function SiteHead() {
         <div className="h-7 w-7 rounded-full bg-spiral opacity-90 group-hover:rotate-180 transition-transform duration-700" />
         <span className="font-display text-lg tracking-tight">Truth Spiral</span>
       </Link>
-      <nav className="flex items-center gap-6 text-sm text-muted-foreground">
+      <nav className="flex items-center gap-4 md:gap-6 text-sm text-muted-foreground">
         <Link to="/play/solo" className="hover:text-cream transition">Solo</Link>
-        <Link to="/play/local" className="hover:text-cream transition">In-person</Link>
-        <Link to="/join" className="hover:text-cream transition">Join room</Link>
+        <Link to="/play/local" className="hover:text-cream transition hidden sm:inline">In-person</Link>
+        <Link to="/async/new" className="hover:text-cream transition hidden sm:inline">Async</Link>
+        <Link to="/join" className="hover:text-cream transition">Join</Link>
       </nav>
     </header>
   );

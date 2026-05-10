@@ -5,6 +5,11 @@ import { CardStage, type GameAnswer, type GameCard } from "@/components/CardStag
 import { loadCoreCards } from "@/lib/cards";
 import { SiteHead } from "@/components/SiteHead";
 import { Spiral } from "@/components/Spiral";
+import { PlayerSetup } from "@/components/PlayerSetup";
+import { CopyButton } from "@/components/CopyButton";
+import { Avatar } from "@/lib/avatars";
+import { loadProfile, type Profile } from "@/lib/profile";
+import { makeToken } from "@/lib/share";
 
 export const Route = createFileRoute("/room/$code")({
   component: Room,
@@ -25,13 +30,15 @@ type SessionRow = {
   current_card_id: string | null;
   current_player_id: string | null;
   status: string;
+  share_token: string | null;
 };
-type PlayerRow = { id: string; display_name: string; turn_order: number };
+type PlayerRow = { id: string; display_name: string; turn_order: number; avatar_key: string | null };
 type AnswerRow = {
   id: string;
   card_id: string;
   layer: number;
   player_name: string;
+  avatar_key: string | null;
   text: string;
   is_reflection: boolean;
   is_spiral: boolean;
@@ -46,25 +53,15 @@ function Room() {
   const [answers, setAnswers] = useState<AnswerRow[]>([]);
   const [cards, setCards] = useState<GameCard[]>([]);
   const [me, setMe] = useState<PlayerRow | null>(null);
-  const [name, setName] = useState("");
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [notFound, setNotFound] = useState(false);
 
-  // Load
-  useEffect(() => {
-    loadCoreCards().then(setCards);
-  }, []);
+  useEffect(() => { loadCoreCards().then(setCards); setProfile(loadProfile()); }, []);
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from("sessions")
-        .select("*")
-        .eq("room_code", code)
-        .maybeSingle();
-      if (!data) {
-        setNotFound(true);
-        return;
-      }
+      const { data } = await supabase.from("sessions").select("*").eq("room_code", code).maybeSingle();
+      if (!data) { setNotFound(true); return; }
       setSession(data as SessionRow);
       const [{ data: ps }, { data: as }] = await Promise.all([
         supabase.from("session_players").select("*").eq("session_id", data.id).order("turn_order"),
@@ -72,7 +69,6 @@ function Room() {
       ]);
       setPlayers((ps ?? []) as PlayerRow[]);
       setAnswers((as ?? []) as AnswerRow[]);
-
       const storedId = localStorage.getItem(`ts:player:${data.id}`);
       if (storedId) {
         const found = (ps ?? []).find((p) => p.id === storedId);
@@ -81,7 +77,6 @@ function Room() {
     })();
   }, [code]);
 
-  // Realtime
   useEffect(() => {
     if (!session) return;
     const channel = supabase
@@ -96,16 +91,15 @@ function Room() {
         setAnswers((prev) => [...prev, p.new as AnswerRow]);
       })
       .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, [session?.id]);
 
-  async function joinRoom() {
-    if (!session || !name.trim()) return;
+  async function joinRoom(p: Profile) {
+    if (!session) return;
+    setProfile(p);
     const { data } = await supabase
       .from("session_players")
-      .insert({ session_id: session.id, display_name: name.trim(), turn_order: players.length })
+      .insert({ session_id: session.id, display_name: p.name, turn_order: players.length, avatar_key: p.avatar })
       .select("*")
       .single();
     if (data) {
@@ -126,7 +120,6 @@ function Room() {
 
   const isMyTurn = !!me && session?.current_player_id === me.id;
 
-  // Convert answers → GameAnswer[]
   const gameAnswers: GameAnswer[] = answers.map((a) => ({
     id: a.id,
     cardId: a.card_id,
@@ -155,50 +148,48 @@ function Room() {
     );
   }
 
-  // Lobby
+  // Lobby — choose name + avatar
   if (!me) {
+    const url = typeof window !== "undefined" ? `${window.location.origin}/room/${code}` : "";
     return (
       <div className="min-h-screen">
         <SiteHead />
-        <main className="max-w-md mx-auto px-6 pt-6 pb-16 text-center">
+        <main className="max-w-md mx-auto px-6 pt-2 pb-16 text-center">
           <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Live room</div>
           <h1 className="font-display text-5xl tracking-[0.2em] mt-2 text-gold">{code}</h1>
           <p className="text-muted-foreground text-sm mt-3">
-            {players.length === 0 ? "Be the first to step into the spiral." : `${players.length} already inside.`}
+            {players.length === 0 ? "Be the first inside." : `${players.length} already inside.`}
           </p>
 
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && joinRoom()}
-            placeholder="Your name"
-            className="mt-8 w-full bg-card/60 border border-border rounded-full px-4 py-3 text-center focus:outline-none focus:ring-2 focus:ring-gold/40"
-          />
-          <button
-            disabled={!name.trim()}
-            onClick={joinRoom}
-            className="mt-4 w-full px-6 py-3 rounded-full bg-gold text-primary-foreground font-medium disabled:opacity-40"
-          >
-            Enter the spiral
-          </button>
+          {players.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-2 justify-center">
+              {players.map((p) => (
+                <div key={p.id} className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-card/60 border border-border text-xs">
+                  <Avatar k={p.avatar_key} name={p.display_name} size={18} />
+                  {p.display_name}
+                </div>
+              ))}
+            </div>
+          )}
 
-          <div className="mt-8">
-            <button
-              onClick={() => {
-                const url = `${window.location.origin}/room/${code}`;
-                navigator.clipboard.writeText(url);
-              }}
-              className="text-xs uppercase tracking-widest text-muted-foreground hover:text-cream"
-            >
+          <div className="mt-3">
+            <CopyButton value={url} className="text-xs uppercase tracking-widest text-muted-foreground hover:text-cream">
               Copy invite link
-            </button>
+            </CopyButton>
           </div>
+
+          <PlayerSetup
+            initial={profile}
+            subtitle="Choose how you'll appear"
+            title="Enter the spiral"
+            ctaLabel="Enter"
+            onReady={joinRoom}
+          />
         </main>
       </div>
     );
   }
 
-  // Room
   async function handleAnswer(a: { cardId: string; prompt: string; layer: number; playerName: string; text: string; action: "answer" | "reflect" | "spiral" }) {
     if (!session || !me) return;
     await supabase.from("answers").insert({
@@ -206,69 +197,76 @@ function Room() {
       card_id: a.cardId,
       player_id: me.id,
       player_name: a.playerName,
+      avatar_key: me.avatar_key,
       layer: a.layer,
       text: a.text,
       is_reflection: a.action === "reflect",
       is_spiral: a.action === "spiral",
     });
-
-    // Advance turn + pick next card
     const newCount = answers.filter((x) => x.layer === a.layer).length + 1;
     const nextLayer = newCount >= 3 && a.layer < 5 ? a.layer + 1 : a.layer;
     const pool = cards.filter((c) => c.layer === nextLayer && c.id !== a.cardId);
     const nextCard = pool[Math.floor(Math.random() * pool.length)];
     const idx = players.findIndex((p) => p.id === me.id);
     const nextPlayer = players[(idx + 1) % players.length];
-
-    await supabase
-      .from("sessions")
-      .update({
-        current_layer: nextLayer,
-        current_card_id: nextCard?.id ?? null,
-        current_player_id: nextPlayer?.id ?? null,
-      })
-      .eq("id", session.id);
+    await supabase.from("sessions").update({
+      current_layer: nextLayer,
+      current_card_id: nextCard?.id ?? null,
+      current_player_id: nextPlayer?.id ?? null,
+    }).eq("id", session.id);
   }
 
   async function startGame() {
     if (!session || !cards.length || !players.length) return;
-    const first = cards.filter((c) => c.layer === 1)[Math.floor(Math.random() * cards.filter((c) => c.layer === 1).length)];
-    await supabase
-      .from("sessions")
-      .update({
-        current_card_id: first.id,
-        current_player_id: players[0].id,
-        current_layer: 1,
-      })
-      .eq("id", session.id);
+    const layer1 = cards.filter((c) => c.layer === 1);
+    const first = layer1[Math.floor(Math.random() * layer1.length)];
+    await supabase.from("sessions").update({
+      current_card_id: first.id,
+      current_player_id: players[0].id,
+      current_layer: 1,
+    }).eq("id", session.id);
   }
 
-  function closeRoom(_answers: GameAnswer[]) {
-    sessionStorage.setItem("ts:lastRecap", JSON.stringify({
-      mode: "room",
-      players: players.map((p) => p.display_name),
-      answers: gameAnswers,
-      ts: Date.now(),
-    }));
-    navigate({ to: "/recap/local" });
+  async function closeRoom(_answers: GameAnswer[]) {
+    if (!session) return;
+    let token = session.share_token;
+    if (!token) {
+      token = makeToken();
+      await supabase.from("sessions").update({ share_token: token, status: "closed", closed_at: new Date().toISOString() }).eq("id", session.id);
+    }
+    navigate({ to: "/recap/$id", params: { id: token } });
   }
+
+  const inviteUrl = typeof window !== "undefined" ? `${window.location.origin}/room/${code}` : "";
 
   return (
     <div className="min-h-screen">
       <SiteHead />
-      <div className="max-w-2xl mx-auto px-6 mb-4 flex items-center justify-between">
-        <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          Room <span className="text-gold tracking-[0.4em]">{code}</span> · {players.length} player{players.length === 1 ? "" : "s"}
+      <div className="max-w-2xl mx-auto px-6 mb-3 flex items-center justify-between flex-wrap gap-2">
+        <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
+          Room <span className="text-gold tracking-[0.4em]">{code}</span>
         </div>
-        <button
-          onClick={() => {
-            const url = `${window.location.origin}/room/${code}`;
-            navigator.clipboard.writeText(url);
-          }}
-          className="text-xs text-muted-foreground hover:text-cream"
-        >
-          Copy invite
-        </button>
+        <div className="flex items-center gap-3">
+          <CopyButton value={code} className="text-xs text-muted-foreground hover:text-cream">Copy code</CopyButton>
+          <CopyButton value={inviteUrl} className="text-xs text-gold hover:underline">Copy invite link</CopyButton>
+        </div>
+      </div>
+
+      {/* Player rail */}
+      <div className="max-w-2xl mx-auto px-6 mb-4 flex flex-wrap gap-2">
+        {players.map((p) => (
+          <div
+            key={p.id}
+            className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs border transition"
+            style={{
+              borderColor: session.current_player_id === p.id ? "var(--gold)" : "var(--border)",
+              background: session.current_player_id === p.id ? "oklch(0.82 0.15 78 / 0.10)" : "transparent",
+            }}
+          >
+            <Avatar k={p.avatar_key} name={p.display_name} size={18} ring={session.current_player_id === p.id} />
+            <span className={session.current_player_id === p.id ? "text-cream" : "text-muted-foreground"}>{p.display_name}</span>
+          </div>
+        ))}
       </div>
 
       {!session.current_card_id ? (
@@ -294,6 +292,7 @@ function Room() {
           activePlayer={activePlayer}
           currentCard={currentCard}
           answersOverride={gameAnswers}
+          dbBacked
           onAnswer={handleAnswer}
           onClose={closeRoom}
         />
