@@ -110,7 +110,7 @@ function SharedRecap() {
           cards={answers.length}
           spirals={stats.spirals}
           byLayer={stats.byLayer}
-          featured={stats.featured ? { text: stats.featured.text, playerName: stats.featured.playerName, prompt: prompts[stats.featured.card_id] ?? "" } : null}
+          featured={stats.featured ? { text: stats.featured.text, playerName: stats.featured.player_name, prompt: prompts[stats.featured.card_id] ?? "" } : null}
           players={stats.players}
         />
       </div>
@@ -135,7 +135,7 @@ function SharedRecap() {
             <blockquote className="mt-10 border-l-2 pl-5 py-2" style={{ borderColor: info.color }}>
               <p className="font-display text-lg italic">"{stats.featured.text}"</p>
               <footer className="text-xs text-muted-foreground mt-2">
-                — {stats.featured.playerName}
+                — {stats.featured.player_name}
               </footer>
             </blockquote>
           )}
