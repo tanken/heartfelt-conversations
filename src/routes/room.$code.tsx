@@ -148,6 +148,7 @@ function Room() {
       .single();
     if (data) {
       localStorage.setItem(`ts:player:${session.id}`, data.id);
+      rememberRoom(code, session.id, data.id);
       setMe(data as PlayerRow);
     }
   }
