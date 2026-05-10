@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "@tanstack/react-router";
 import { layerInfo, LAYERS, type SpiralAction } from "@/lib/spiral";
 import { shareAnswer } from "@/lib/share";
+import { ReportButton } from "@/components/ReportButton";
+import { useReducedMotion } from "@/lib/a11y";
 
 export type GameCard = { id: string; layer: number; prompt: string };
 export type GameAnswer = {
@@ -59,6 +61,7 @@ export function CardStage({
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const usedRef = useRef<Set<string>>(new Set());
+  const reduced = useReducedMotion();
 
   const answers = answersOverride ?? internalAnswers;
   const card = externalCard ?? internalCard;
