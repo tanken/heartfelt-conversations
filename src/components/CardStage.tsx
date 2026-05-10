@@ -34,6 +34,8 @@ interface CardStageProps {
   activePlayer?: string;
   /** Hook called when picking next card (live rooms). */
   onPickNext?: (card: GameCard) => void;
+  /** When true, answers shown have real DB ids and a Share button appears. */
+  dbBacked?: boolean;
 }
 
 export function CardStage({
@@ -47,6 +49,7 @@ export function CardStage({
   canPlay = true,
   activePlayer,
   onPickNext,
+  dbBacked = false,
 }: CardStageProps) {
   const [layer, setLayer] = useState(1);
   const [internalCard, setInternalCard] = useState<GameCard | null>(null);
