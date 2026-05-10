@@ -1,7 +1,9 @@
 import { motion } from "framer-motion";
+import { useReducedMotion } from "@/lib/a11y";
 
 /** Animated cosmic spiral motif. */
 export function Spiral({ size = 320, className = "" }: { size?: number; className?: string }) {
+  const reduced = useReducedMotion();
   const arms = 4;
   const points = 140;
   const paths: string[] = [];
@@ -24,8 +26,10 @@ export function Spiral({ size = 320, className = "" }: { size?: number; classNam
       height={size}
       viewBox={`0 0 ${size} ${size}`}
       className={className}
-      animate={{ rotate: 360 }}
-      transition={{ duration: 80, repeat: Infinity, ease: "linear" }}
+      role="img"
+      aria-label="Spiral motif"
+      animate={reduced ? undefined : { rotate: 360 }}
+      transition={reduced ? undefined : { duration: 80, repeat: Infinity, ease: "linear" }}
     >
       <defs>
         <radialGradient id="spiralGrad" cx="50%" cy="50%" r="50%">
