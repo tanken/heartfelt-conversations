@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CardStage, type GameAnswer, type GameCard } from "@/components/CardStage";
 import { loadCoreCards } from "@/lib/cards";
@@ -10,6 +10,7 @@ import { CopyButton } from "@/components/CopyButton";
 import { Avatar } from "@/lib/avatars";
 import { loadProfile, type Profile } from "@/lib/profile";
 import { makeToken } from "@/lib/share";
+import { rememberRoom, recallRoom, forgetRoom } from "@/lib/rooms";
 
 export const Route = createFileRoute("/room/$code")({
   component: Room,
@@ -55,6 +56,8 @@ function Room() {
   const [me, setMe] = useState<PlayerRow | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [connState, setConnState] = useState<"connecting" | "live" | "reconnecting">("connecting");
+  const reconnectAttempt = useRef(0);
 
   useEffect(() => { loadCoreCards().then(setCards); setProfile(loadProfile()); }, []);
 
@@ -69,30 +72,71 @@ function Room() {
       ]);
       setPlayers((ps ?? []) as PlayerRow[]);
       setAnswers((as ?? []) as AnswerRow[]);
-      const storedId = localStorage.getItem(`ts:player:${data.id}`);
+
+      // Resume: prefer per-room store; fall back to legacy per-session key.
+      const stored = recallRoom(code);
+      const storedId = stored?.playerId ?? localStorage.getItem(`ts:player:${data.id}`);
       if (storedId) {
         const found = (ps ?? []).find((p) => p.id === storedId);
-        if (found) setMe(found as PlayerRow);
+        if (found) {
+          setMe(found as PlayerRow);
+          rememberRoom(code, data.id, found.id);
+        }
       }
     })();
   }, [code]);
 
+  // Realtime channel with reconnect/backoff.
   useEffect(() => {
     if (!session) return;
-    const channel = supabase
-      .channel(`room:${session.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "sessions", filter: `id=eq.${session.id}` }, (p) => {
-        setSession((prev) => ({ ...(prev as SessionRow), ...(p.new as SessionRow) }));
-      })
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "session_players", filter: `session_id=eq.${session.id}` }, (p) => {
-        setPlayers((prev) => [...prev, p.new as PlayerRow].sort((a, b) => a.turn_order - b.turn_order));
-      })
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "answers", filter: `session_id=eq.${session.id}` }, (p) => {
-        setAnswers((prev) => [...prev, p.new as AnswerRow]);
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [session?.id]);
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    function attach() {
+      channel = supabase
+        .channel(`room:${session!.id}`)
+        .on("postgres_changes", { event: "*", schema: "public", table: "sessions", filter: `id=eq.${session!.id}` }, (p) => {
+          setSession((prev) => ({ ...(prev as SessionRow), ...(p.new as SessionRow) }));
+        })
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "session_players", filter: `session_id=eq.${session!.id}` }, (p) => {
+          setPlayers((prev) => prev.some((x) => x.id === (p.new as PlayerRow).id) ? prev : [...prev, p.new as PlayerRow].sort((a, b) => a.turn_order - b.turn_order));
+        })
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "answers", filter: `session_id=eq.${session!.id}` }, (p) => {
+          setAnswers((prev) => prev.some((x) => x.id === (p.new as AnswerRow).id) ? prev : [...prev, p.new as AnswerRow]);
+        })
+        .subscribe((status) => {
+          if (cancelled) return;
+          if (status === "SUBSCRIBED") {
+            setConnState("live");
+            reconnectAttempt.current = 0;
+          } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+            setConnState("reconnecting");
+            const delay = Math.min(8000, 1000 * 2 ** reconnectAttempt.current);
+            reconnectAttempt.current += 1;
+            if (channel) supabase.removeChannel(channel);
+            timer = setTimeout(() => { if (!cancelled) attach(); }, delay);
+          }
+        });
+    }
+
+    attach();
+
+    // Heartbeat: refresh joined_at as a "last seen" so the player row stays warm.
+    const heartbeat = setInterval(() => {
+      const stored = recallRoom(code);
+      if (stored?.playerId) {
+        supabase.from("session_players").update({ joined_at: new Date().toISOString() }).eq("id", stored.playerId);
+      }
+    }, 15000);
+
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+      clearInterval(heartbeat);
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, [session?.id, code]);
 
   async function joinRoom(p: Profile) {
     if (!session) return;
