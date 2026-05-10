@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SparksRouteImport } from './routes/sparks'
 import { Route as JoinRouteImport } from './routes/join'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -22,6 +23,11 @@ import { Route as PlayLocalRouteImport } from './routes/play.local'
 import { Route as AsyncNewRouteImport } from './routes/async.new'
 import { Route as AsyncIdRouteImport } from './routes/async.$id'
 
+const SparksRoute = SparksRouteImport.update({
+  id: '/sparks',
+  path: '/sparks',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const JoinRoute = JoinRouteImport.update({
   id: '/join',
   path: '/join',
@@ -87,6 +93,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/join': typeof JoinRoute
+  '/sparks': typeof SparksRoute
   '/async/$id': typeof AsyncIdRoute
   '/async/new': typeof AsyncNewRoute
   '/play/local': typeof PlayLocalRoute
@@ -101,6 +108,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/join': typeof JoinRoute
+  '/sparks': typeof SparksRoute
   '/async/$id': typeof AsyncIdRoute
   '/async/new': typeof AsyncNewRoute
   '/play/local': typeof PlayLocalRoute
@@ -116,6 +124,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/join': typeof JoinRoute
+  '/sparks': typeof SparksRoute
   '/async/$id': typeof AsyncIdRoute
   '/async/new': typeof AsyncNewRoute
   '/play/local': typeof PlayLocalRoute
@@ -132,6 +141,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/join'
+    | '/sparks'
     | '/async/$id'
     | '/async/new'
     | '/play/local'
@@ -146,6 +156,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/join'
+    | '/sparks'
     | '/async/$id'
     | '/async/new'
     | '/play/local'
@@ -160,6 +171,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/join'
+    | '/sparks'
     | '/async/$id'
     | '/async/new'
     | '/play/local'
@@ -175,6 +187,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   JoinRoute: typeof JoinRoute
+  SparksRoute: typeof SparksRoute
   AsyncIdRoute: typeof AsyncIdRoute
   AsyncNewRoute: typeof AsyncNewRoute
   PlayLocalRoute: typeof PlayLocalRoute
@@ -188,6 +201,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sparks': {
+      id: '/sparks'
+      path: '/sparks'
+      fullPath: '/sparks'
+      preLoaderRoute: typeof SparksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/join': {
       id: '/join'
       path: '/join'
@@ -279,6 +299,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   JoinRoute: JoinRoute,
+  SparksRoute: SparksRoute,
   AsyncIdRoute: AsyncIdRoute,
   AsyncNewRoute: AsyncNewRoute,
   PlayLocalRoute: PlayLocalRoute,
@@ -292,3 +313,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
