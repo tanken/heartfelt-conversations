@@ -11,11 +11,14 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as JoinRouteImport } from './routes/join'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ShareIdRouteImport } from './routes/share.$id'
 import { Route as RoomNewRouteImport } from './routes/room.new'
 import { Route as RoomCodeRouteImport } from './routes/room.$code'
 import { Route as RecapLocalRouteImport } from './routes/recap.local'
 import { Route as PlaySoloRouteImport } from './routes/play.solo'
 import { Route as PlayLocalRouteImport } from './routes/play.local'
+import { Route as AsyncNewRouteImport } from './routes/async.new'
+import { Route as AsyncIdRouteImport } from './routes/async.$id'
 
 const JoinRoute = JoinRouteImport.update({
   id: '/join',
@@ -25,6 +28,11 @@ const JoinRoute = JoinRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShareIdRoute = ShareIdRouteImport.update({
+  id: '/share/$id',
+  path: '/share/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RoomNewRoute = RoomNewRouteImport.update({
@@ -52,73 +60,104 @@ const PlayLocalRoute = PlayLocalRouteImport.update({
   path: '/play/local',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AsyncNewRoute = AsyncNewRouteImport.update({
+  id: '/async/new',
+  path: '/async/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AsyncIdRoute = AsyncIdRouteImport.update({
+  id: '/async/$id',
+  path: '/async/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/join': typeof JoinRoute
+  '/async/$id': typeof AsyncIdRoute
+  '/async/new': typeof AsyncNewRoute
   '/play/local': typeof PlayLocalRoute
   '/play/solo': typeof PlaySoloRoute
   '/recap/local': typeof RecapLocalRoute
   '/room/$code': typeof RoomCodeRoute
   '/room/new': typeof RoomNewRoute
+  '/share/$id': typeof ShareIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/join': typeof JoinRoute
+  '/async/$id': typeof AsyncIdRoute
+  '/async/new': typeof AsyncNewRoute
   '/play/local': typeof PlayLocalRoute
   '/play/solo': typeof PlaySoloRoute
   '/recap/local': typeof RecapLocalRoute
   '/room/$code': typeof RoomCodeRoute
   '/room/new': typeof RoomNewRoute
+  '/share/$id': typeof ShareIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/join': typeof JoinRoute
+  '/async/$id': typeof AsyncIdRoute
+  '/async/new': typeof AsyncNewRoute
   '/play/local': typeof PlayLocalRoute
   '/play/solo': typeof PlaySoloRoute
   '/recap/local': typeof RecapLocalRoute
   '/room/$code': typeof RoomCodeRoute
   '/room/new': typeof RoomNewRoute
+  '/share/$id': typeof ShareIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/join'
+    | '/async/$id'
+    | '/async/new'
     | '/play/local'
     | '/play/solo'
     | '/recap/local'
     | '/room/$code'
     | '/room/new'
+    | '/share/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/join'
+    | '/async/$id'
+    | '/async/new'
     | '/play/local'
     | '/play/solo'
     | '/recap/local'
     | '/room/$code'
     | '/room/new'
+    | '/share/$id'
   id:
     | '__root__'
     | '/'
     | '/join'
+    | '/async/$id'
+    | '/async/new'
     | '/play/local'
     | '/play/solo'
     | '/recap/local'
     | '/room/$code'
     | '/room/new'
+    | '/share/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   JoinRoute: typeof JoinRoute
+  AsyncIdRoute: typeof AsyncIdRoute
+  AsyncNewRoute: typeof AsyncNewRoute
   PlayLocalRoute: typeof PlayLocalRoute
   PlaySoloRoute: typeof PlaySoloRoute
   RecapLocalRoute: typeof RecapLocalRoute
   RoomCodeRoute: typeof RoomCodeRoute
   RoomNewRoute: typeof RoomNewRoute
+  ShareIdRoute: typeof ShareIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -135,6 +174,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/share/$id': {
+      id: '/share/$id'
+      path: '/share/$id'
+      fullPath: '/share/$id'
+      preLoaderRoute: typeof ShareIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/room/new': {
@@ -172,17 +218,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlayLocalRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/async/new': {
+      id: '/async/new'
+      path: '/async/new'
+      fullPath: '/async/new'
+      preLoaderRoute: typeof AsyncNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/async/$id': {
+      id: '/async/$id'
+      path: '/async/$id'
+      fullPath: '/async/$id'
+      preLoaderRoute: typeof AsyncIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   JoinRoute: JoinRoute,
+  AsyncIdRoute: AsyncIdRoute,
+  AsyncNewRoute: AsyncNewRoute,
   PlayLocalRoute: PlayLocalRoute,
   PlaySoloRoute: PlaySoloRoute,
   RecapLocalRoute: RecapLocalRoute,
   RoomCodeRoute: RoomCodeRoute,
   RoomNewRoute: RoomNewRoute,
+  ShareIdRoute: ShareIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
