@@ -20,6 +20,7 @@ export type Database = {
           card_id: string
           created_at: string
           id: string
+          is_hidden: boolean
           is_reflection: boolean
           is_shared: boolean
           is_spiral: boolean
@@ -34,6 +35,7 @@ export type Database = {
           card_id: string
           created_at?: string
           id?: string
+          is_hidden?: boolean
           is_reflection?: boolean
           is_shared?: boolean
           is_spiral?: boolean
@@ -48,6 +50,7 @@ export type Database = {
           card_id?: string
           created_at?: string
           id?: string
+          is_hidden?: boolean
           is_reflection?: boolean
           is_shared?: boolean
           is_spiral?: boolean
@@ -134,6 +137,33 @@ export type Database = {
           id?: string
           name?: string
           slug?: string
+        }
+        Relationships: []
+      }
+      reports: {
+        Row: {
+          created_at: string
+          detail: string | null
+          id: string
+          reason: string
+          target_id: string
+          target_type: string
+        }
+        Insert: {
+          created_at?: string
+          detail?: string | null
+          id?: string
+          reason: string
+          target_id: string
+          target_type: string
+        }
+        Update: {
+          created_at?: string
+          detail?: string | null
+          id?: string
+          reason?: string
+          target_id?: string
+          target_type?: string
         }
         Relationships: []
       }
@@ -231,6 +261,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      share_clicks: {
+        Row: {
+          created_at: string
+          id: string
+          referrer: string | null
+          target_id: string
+          target_type: string
+          ua: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          referrer?: string | null
+          target_id: string
+          target_type: string
+          ua?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          referrer?: string | null
+          target_id?: string
+          target_type?: string
+          ua?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {

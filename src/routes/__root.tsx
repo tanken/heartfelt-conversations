@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MotionConfig } from "framer-motion";
 import {
   Outlet,
   Link,
@@ -74,10 +75,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Truth Spiral — A card game for deeper conversation" },
       { name: "description", content: "Spiral inward through five layers of intimacy. Play solo, in-person, or in a live virtual room with friends." },
+      { property: "og:site_name", content: "Truth Spiral" },
+      { property: "og:type", content: "website" },
       { property: "og:title", content: "Truth Spiral" },
       { property: "og:description", content: "A conversational card game that turns vulnerability into a game." },
-      { property: "og:type", content: "website" },
+      { property: "og:image", content: "/og-default.jpg" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "640" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: "/og-default.jpg" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -114,7 +120,9 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <MotionConfig reducedMotion="user">
+        <Outlet />
+      </MotionConfig>
     </QueryClientProvider>
   );
 }

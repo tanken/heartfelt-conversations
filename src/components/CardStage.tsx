@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "@tanstack/react-router";
 import { layerInfo, LAYERS, type SpiralAction } from "@/lib/spiral";
 import { shareAnswer } from "@/lib/share";
+import { ReportButton } from "@/components/ReportButton";
+import { useReducedMotion } from "@/lib/a11y";
 
 export type GameCard = { id: string; layer: number; prompt: string };
 export type GameAnswer = {
@@ -59,6 +61,7 @@ export function CardStage({
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const usedRef = useRef<Set<string>>(new Set());
+  const reduced = useReducedMotion();
 
   const answers = answersOverride ?? internalAnswers;
   const card = externalCard ?? internalCard;
@@ -127,10 +130,16 @@ export function CardStage({
     <div className="max-w-2xl mx-auto px-6 pb-12">
       {/* Layer indicator */}
       <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2">
+        <div
+          className="flex items-center gap-2"
+          role="status"
+          aria-live="polite"
+          aria-label={`Currently on layer ${layer} of 5: ${info.name}`}
+        >
           {LAYERS.map((l) => (
             <div
               key={l.n}
+              aria-current={l.n === layer ? "step" : undefined}
               className="h-1.5 w-8 rounded-full transition-all"
               style={{
                 background: l.n <= layer ? l.color : "oklch(1 0 0 / 0.1)",
@@ -141,7 +150,7 @@ export function CardStage({
         </div>
         <button
           onClick={() => onClose(answers)}
-          className="text-xs uppercase tracking-widest text-muted-foreground hover:text-cream transition"
+          className="text-xs uppercase tracking-widest text-muted-foreground hover:text-cream transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 rounded"
         >
           Close spiral
         </button>
@@ -158,12 +167,14 @@ export function CardStage({
         {card && (
           <motion.div
             key={card.id}
-            initial={{ opacity: 0, y: 30, rotate: -2, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, rotate: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -30, rotate: 2, scale: 0.96 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            initial={reduced ? { opacity: 0 } : { opacity: 0, y: 30, rotate: -2, scale: 0.96 }}
+            animate={reduced ? { opacity: 1 } : { opacity: 1, y: 0, rotate: 0, scale: 1 }}
+            exit={reduced ? { opacity: 0 } : { opacity: 0, y: -30, rotate: 2, scale: 0.96 }}
+            transition={{ duration: reduced ? 0.15 : 0.5, ease: [0.22, 1, 0.36, 1] }}
             className="relative rounded-3xl p-8 md:p-12 bg-card/80 backdrop-blur shadow-card border border-border"
             style={{ borderTop: `3px solid ${info.color}` }}
+            role="article"
+            aria-label={`Card for ${playerName} at layer ${card.layer}`}
           >
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[10px] uppercase tracking-widest"
               style={{ background: info.color, color: "oklch(0.16 0.04 280)" }}>
@@ -179,15 +190,23 @@ export function CardStage({
         )}
       </AnimatePresence>
 
-      {/* Input + actions */}
       {canPlay && card && (
         <div className="mt-6">
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Speak honestly…"
+            onKeyDown={(e) => {
+              if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && text.trim()) {
+                e.preventDefault();
+                commit("answer");
+              } else if (e.key === "Escape") {
+                setText("");
+              }
+            }}
+            placeholder="Speak honestly… (⌘/Ctrl+Enter to send)"
             rows={3}
-            className="w-full bg-card/60 border border-border rounded-2xl p-4 text-cream placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-gold/40 resize-none"
+            aria-label="Your answer"
+            className="w-full bg-card/60 border border-border rounded-2xl p-4 text-cream placeholder:text-muted-foreground/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 resize-none"
           />
           <div className="mt-4 flex flex-wrap gap-2 justify-center">
             <button
@@ -233,15 +252,19 @@ export function CardStage({
                   <p className="text-sm text-muted-foreground mt-1 italic">"{a.text}"</p>
                 )}
                 {dbBacked && a.action !== "reflect" && (
-                  <button
-                    onClick={async () => {
-                      const url = await shareAnswer(a.id);
-                      window.open(url, "_blank");
-                    }}
-                    className="mt-2 text-[11px] uppercase tracking-widest text-gold hover:underline"
-                  >
-                    Share this answer →
-                  </button>
+                  <div className="mt-2 flex items-center gap-3">
+                    <button
+                      onClick={async () => {
+                        const url = await shareAnswer(a.id);
+                        window.open(url, "_blank");
+                      }}
+                      aria-label="Share this answer"
+                      className="text-[11px] uppercase tracking-widest text-gold hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 rounded"
+                    >
+                      Share this answer →
+                    </button>
+                    <ReportButton targetType="answer" targetId={a.id} />
+                  </div>
                 )}
               </li>
             ))}

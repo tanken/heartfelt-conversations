@@ -1,9 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Spiral } from "@/components/Spiral";
 import { SiteHead } from "@/components/SiteHead";
+import { A11ySettings } from "@/components/A11ySettings";
 import { LAYERS } from "@/lib/spiral";
+import { listStoredRooms, type StoredRoom } from "@/lib/rooms";
+import { useReducedMotion } from "@/lib/a11y";
 
 export const Route = createFileRoute("/")({
   component: Landing,
@@ -11,7 +14,13 @@ export const Route = createFileRoute("/")({
 
 function Landing() {
   const [code, setCode] = useState("");
+  const [resumable, setResumable] = useState<StoredRoom | null>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const rooms = listStoredRooms();
+    if (rooms[0]) setResumable(rooms[0]);
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -92,17 +101,38 @@ function Landing() {
                 value={code}
                 onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 6))}
                 onKeyDown={(e) => e.key === "Enter" && code.length === 6 && navigate({ to: "/room/$code", params: { code } })}
+                onPaste={(e) => {
+                  const t = e.clipboardData.getData("text").toUpperCase().replace(/[^A-Z]/g, "").slice(0, 6);
+                  if (t.length === 6) {
+                    e.preventDefault();
+                    setCode(t);
+                    navigate({ to: "/room/$code", params: { code: t } });
+                  }
+                }}
                 placeholder="Have a code? ABCDEF"
-                className="flex-1 bg-card/40 border border-border rounded-full px-4 py-2.5 tracking-[0.3em] uppercase text-center placeholder:tracking-normal placeholder:normal-case placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-gold/40"
+                aria-label="Room code"
+                maxLength={6}
+                className="flex-1 bg-card/40 border border-border rounded-full px-4 py-2.5 tracking-[0.3em] uppercase text-center placeholder:tracking-normal placeholder:normal-case placeholder:text-muted-foreground/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/60"
               />
               <button
                 disabled={code.length !== 6}
                 onClick={() => navigate({ to: "/room/$code", params: { code } })}
-                className="px-5 py-2.5 rounded-full border border-gold/60 text-gold hover:bg-gold/10 disabled:opacity-30 transition"
+                className="px-5 py-2.5 rounded-full border border-gold/60 text-gold hover:bg-gold/10 disabled:opacity-30 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60"
               >
                 Join
               </button>
             </motion.div>
+
+            {resumable && (
+              <div className="mt-3 text-xs text-muted-foreground">
+                <button
+                  onClick={() => navigate({ to: "/room/$code", params: { code: resumable.code } })}
+                  className="text-gold hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 rounded"
+                >
+                  ↻ Resume room {resumable.code}
+                </button>
+              </div>
+            )}
 
             <div className="mt-4 text-xs text-muted-foreground">
               or{" "}
@@ -165,8 +195,11 @@ function Landing() {
         </section>
       </main>
 
-      <footer className="relative z-10 px-6 py-8 text-center text-xs text-muted-foreground border-t border-border/40">
-        Made for deeper conversations.
+      <footer className="relative z-10 px-6 py-8 text-xs text-muted-foreground border-t border-border/40">
+        <div className="max-w-5xl mx-auto flex items-center justify-between flex-wrap gap-3">
+          <span>Made for deeper conversations.</span>
+          <A11ySettings />
+        </div>
       </footer>
     </div>
   );
@@ -181,11 +214,12 @@ const TRAILER_PROMPTS = [
 ];
 
 function SpiralTrailer() {
+  const reduced = useReducedMotion();
   return (
-    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-[260px] h-12 overflow-hidden">
+    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-[260px] h-12 overflow-hidden" aria-hidden="true">
       <motion.div
-        animate={{ y: [0, -48, -96, -144, -192, -240] }}
-        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+        animate={reduced ? undefined : { y: [0, -48, -96, -144, -192, -240] }}
+        transition={reduced ? undefined : { duration: 18, repeat: Infinity, ease: "easeInOut" }}
         className="flex flex-col gap-0"
       >
         {TRAILER_PROMPTS.map((p, i) => (
