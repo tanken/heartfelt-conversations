@@ -179,6 +179,12 @@ function SharedRecap() {
             Copy recap link
           </CopyButton>
         </div>
+
+        {sessionId && (
+          <div className="mt-6 flex justify-center">
+            <ReportButton targetType="session" targetId={sessionId} />
+          </div>
+        )}
       </main>
     </div>
   );
