@@ -15,6 +15,7 @@ import { Route as ShareIdRouteImport } from './routes/share.$id'
 import { Route as RoomNewRouteImport } from './routes/room.new'
 import { Route as RoomCodeRouteImport } from './routes/room.$code'
 import { Route as RecapLocalRouteImport } from './routes/recap.local'
+import { Route as RecapIdRouteImport } from './routes/recap.$id'
 import { Route as PlaySoloRouteImport } from './routes/play.solo'
 import { Route as PlayLocalRouteImport } from './routes/play.local'
 import { Route as AsyncNewRouteImport } from './routes/async.new'
@@ -50,6 +51,11 @@ const RecapLocalRoute = RecapLocalRouteImport.update({
   path: '/recap/local',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RecapIdRoute = RecapIdRouteImport.update({
+  id: '/recap/$id',
+  path: '/recap/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PlaySoloRoute = PlaySoloRouteImport.update({
   id: '/play/solo',
   path: '/play/solo',
@@ -78,6 +84,7 @@ export interface FileRoutesByFullPath {
   '/async/new': typeof AsyncNewRoute
   '/play/local': typeof PlayLocalRoute
   '/play/solo': typeof PlaySoloRoute
+  '/recap/$id': typeof RecapIdRoute
   '/recap/local': typeof RecapLocalRoute
   '/room/$code': typeof RoomCodeRoute
   '/room/new': typeof RoomNewRoute
@@ -90,6 +97,7 @@ export interface FileRoutesByTo {
   '/async/new': typeof AsyncNewRoute
   '/play/local': typeof PlayLocalRoute
   '/play/solo': typeof PlaySoloRoute
+  '/recap/$id': typeof RecapIdRoute
   '/recap/local': typeof RecapLocalRoute
   '/room/$code': typeof RoomCodeRoute
   '/room/new': typeof RoomNewRoute
@@ -103,6 +111,7 @@ export interface FileRoutesById {
   '/async/new': typeof AsyncNewRoute
   '/play/local': typeof PlayLocalRoute
   '/play/solo': typeof PlaySoloRoute
+  '/recap/$id': typeof RecapIdRoute
   '/recap/local': typeof RecapLocalRoute
   '/room/$code': typeof RoomCodeRoute
   '/room/new': typeof RoomNewRoute
@@ -117,6 +126,7 @@ export interface FileRouteTypes {
     | '/async/new'
     | '/play/local'
     | '/play/solo'
+    | '/recap/$id'
     | '/recap/local'
     | '/room/$code'
     | '/room/new'
@@ -129,6 +139,7 @@ export interface FileRouteTypes {
     | '/async/new'
     | '/play/local'
     | '/play/solo'
+    | '/recap/$id'
     | '/recap/local'
     | '/room/$code'
     | '/room/new'
@@ -141,6 +152,7 @@ export interface FileRouteTypes {
     | '/async/new'
     | '/play/local'
     | '/play/solo'
+    | '/recap/$id'
     | '/recap/local'
     | '/room/$code'
     | '/room/new'
@@ -154,6 +166,7 @@ export interface RootRouteChildren {
   AsyncNewRoute: typeof AsyncNewRoute
   PlayLocalRoute: typeof PlayLocalRoute
   PlaySoloRoute: typeof PlaySoloRoute
+  RecapIdRoute: typeof RecapIdRoute
   RecapLocalRoute: typeof RecapLocalRoute
   RoomCodeRoute: typeof RoomCodeRoute
   RoomNewRoute: typeof RoomNewRoute
@@ -204,6 +217,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RecapLocalRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/recap/$id': {
+      id: '/recap/$id'
+      path: '/recap/$id'
+      fullPath: '/recap/$id'
+      preLoaderRoute: typeof RecapIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/play/solo': {
       id: '/play/solo'
       path: '/play/solo'
@@ -242,6 +262,7 @@ const rootRouteChildren: RootRouteChildren = {
   AsyncNewRoute: AsyncNewRoute,
   PlayLocalRoute: PlayLocalRoute,
   PlaySoloRoute: PlaySoloRoute,
+  RecapIdRoute: RecapIdRoute,
   RecapLocalRoute: RecapLocalRoute,
   RoomCodeRoute: RoomCodeRoute,
   RoomNewRoute: RoomNewRoute,
@@ -250,3 +271,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
