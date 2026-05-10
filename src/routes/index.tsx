@@ -195,8 +195,11 @@ function Landing() {
         </section>
       </main>
 
-      <footer className="relative z-10 px-6 py-8 text-center text-xs text-muted-foreground border-t border-border/40">
-        Made for deeper conversations.
+      <footer className="relative z-10 px-6 py-8 text-xs text-muted-foreground border-t border-border/40">
+        <div className="max-w-5xl mx-auto flex items-center justify-between flex-wrap gap-3">
+          <span>Made for deeper conversations.</span>
+          <A11ySettings />
+        </div>
       </footer>
     </div>
   );
@@ -211,11 +214,12 @@ const TRAILER_PROMPTS = [
 ];
 
 function SpiralTrailer() {
+  const reduced = useReducedMotion();
   return (
-    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-[260px] h-12 overflow-hidden">
+    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-[260px] h-12 overflow-hidden" aria-hidden="true">
       <motion.div
-        animate={{ y: [0, -48, -96, -144, -192, -240] }}
-        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+        animate={reduced ? undefined : { y: [0, -48, -96, -144, -192, -240] }}
+        transition={reduced ? undefined : { duration: 18, repeat: Infinity, ease: "easeInOut" }}
         className="flex flex-col gap-0"
       >
         {TRAILER_PROMPTS.map((p, i) => (
