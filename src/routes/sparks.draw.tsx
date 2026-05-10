@@ -19,7 +19,9 @@ export const Route = createFileRoute("/sparks/draw")({
 const PLAYER_KEY = "liftd:sparks:players";
 
 function SparksDraw() {
-  const { depth, mode } = Route.useSearch();
+  const raw = Route.useSearch();
+  const depth = raw.depth as Depth;
+  const mode = raw.mode as "solo" | "friend" | "group";
   const navigate = useNavigate();
   const reduced = useReducedMotion();
   const info = DEPTHS[depth];
