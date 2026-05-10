@@ -24,6 +24,7 @@ import { Route as PlaySoloRouteImport } from './routes/play.solo'
 import { Route as PlayLocalRouteImport } from './routes/play.local'
 import { Route as AsyncNewRouteImport } from './routes/async.new'
 import { Route as AsyncIdRouteImport } from './routes/async.$id'
+import { Route as SparksShareTokenRouteImport } from './routes/sparks.share.$token'
 
 const SparksRoute = SparksRouteImport.update({
   id: '/sparks',
@@ -100,6 +101,11 @@ const AsyncIdRoute = AsyncIdRouteImport.update({
   path: '/async/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SparksShareTokenRoute = SparksShareTokenRouteImport.update({
+  id: '/share/$token',
+  path: '/share/$token',
+  getParentRoute: () => SparksRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/share/$id': typeof ShareIdRoute
   '/sparks/draw': typeof SparksDrawRoute
   '/sparks/': typeof SparksIndexRoute
+  '/sparks/share/$token': typeof SparksShareTokenRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -133,6 +140,7 @@ export interface FileRoutesByTo {
   '/share/$id': typeof ShareIdRoute
   '/sparks/draw': typeof SparksDrawRoute
   '/sparks': typeof SparksIndexRoute
+  '/sparks/share/$token': typeof SparksShareTokenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -151,6 +159,7 @@ export interface FileRoutesById {
   '/share/$id': typeof ShareIdRoute
   '/sparks/draw': typeof SparksDrawRoute
   '/sparks/': typeof SparksIndexRoute
+  '/sparks/share/$token': typeof SparksShareTokenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -170,6 +179,7 @@ export interface FileRouteTypes {
     | '/share/$id'
     | '/sparks/draw'
     | '/sparks/'
+    | '/sparks/share/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -186,6 +196,7 @@ export interface FileRouteTypes {
     | '/share/$id'
     | '/sparks/draw'
     | '/sparks'
+    | '/sparks/share/$token'
   id:
     | '__root__'
     | '/'
@@ -203,6 +214,7 @@ export interface FileRouteTypes {
     | '/share/$id'
     | '/sparks/draw'
     | '/sparks/'
+    | '/sparks/share/$token'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -328,17 +340,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AsyncIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sparks/share/$token': {
+      id: '/sparks/share/$token'
+      path: '/share/$token'
+      fullPath: '/sparks/share/$token'
+      preLoaderRoute: typeof SparksShareTokenRouteImport
+      parentRoute: typeof SparksRoute
+    }
   }
 }
 
 interface SparksRouteChildren {
   SparksDrawRoute: typeof SparksDrawRoute
   SparksIndexRoute: typeof SparksIndexRoute
+  SparksShareTokenRoute: typeof SparksShareTokenRoute
 }
 
 const SparksRouteChildren: SparksRouteChildren = {
   SparksDrawRoute: SparksDrawRoute,
   SparksIndexRoute: SparksIndexRoute,
+  SparksShareTokenRoute: SparksShareTokenRoute,
 }
 
 const SparksRouteWithChildren =
@@ -362,3 +383,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
