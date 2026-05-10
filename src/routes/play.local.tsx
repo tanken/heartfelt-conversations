@@ -27,7 +27,7 @@ function LocalPlay() {
 
   function addPlayer() {
     const n = draft.trim();
-    if (!n) return;
+    if (!n || players.length >= 8) return;
     setPlayers((p) => [...p, n]);
     setDraft("");
   }
