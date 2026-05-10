@@ -198,7 +198,12 @@ function Landing() {
       <footer className="relative z-10 px-6 py-8 text-xs text-muted-foreground border-t border-border/40">
         <div className="max-w-5xl mx-auto flex items-center justify-between flex-wrap gap-3">
           <span>Made for deeper conversations.</span>
-          <A11ySettings />
+          <div className="flex items-center gap-4">
+            <Link to="/sparks" className="text-gold hover:underline">
+              Built for Lift'd? See it as Sparks →
+            </Link>
+            <A11ySettings />
+          </div>
         </div>
       </footer>
     </div>

@@ -9,9 +9,13 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SparksRouteImport } from './routes/sparks'
 import { Route as JoinRouteImport } from './routes/join'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SparksIndexRouteImport } from './routes/sparks.index'
+import { Route as SparksReflectionsRouteImport } from './routes/sparks.reflections'
+import { Route as SparksDrawRouteImport } from './routes/sparks.draw'
 import { Route as ShareIdRouteImport } from './routes/share.$id'
 import { Route as RoomNewRouteImport } from './routes/room.new'
 import { Route as RoomCodeRouteImport } from './routes/room.$code'
@@ -21,7 +25,13 @@ import { Route as PlaySoloRouteImport } from './routes/play.solo'
 import { Route as PlayLocalRouteImport } from './routes/play.local'
 import { Route as AsyncNewRouteImport } from './routes/async.new'
 import { Route as AsyncIdRouteImport } from './routes/async.$id'
+import { Route as SparksShareTokenRouteImport } from './routes/sparks.share.$token'
 
+const SparksRoute = SparksRouteImport.update({
+  id: '/sparks',
+  path: '/sparks',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const JoinRoute = JoinRouteImport.update({
   id: '/join',
   path: '/join',
@@ -36,6 +46,21 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const SparksIndexRoute = SparksIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SparksRoute,
+} as any)
+const SparksReflectionsRoute = SparksReflectionsRouteImport.update({
+  id: '/reflections',
+  path: '/reflections',
+  getParentRoute: () => SparksRoute,
+} as any)
+const SparksDrawRoute = SparksDrawRouteImport.update({
+  id: '/draw',
+  path: '/draw',
+  getParentRoute: () => SparksRoute,
 } as any)
 const ShareIdRoute = ShareIdRouteImport.update({
   id: '/share/$id',
@@ -82,11 +107,17 @@ const AsyncIdRoute = AsyncIdRouteImport.update({
   path: '/async/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SparksShareTokenRoute = SparksShareTokenRouteImport.update({
+  id: '/share/$token',
+  path: '/share/$token',
+  getParentRoute: () => SparksRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/join': typeof JoinRoute
+  '/sparks': typeof SparksRouteWithChildren
   '/async/$id': typeof AsyncIdRoute
   '/async/new': typeof AsyncNewRoute
   '/play/local': typeof PlayLocalRoute
@@ -96,6 +127,10 @@ export interface FileRoutesByFullPath {
   '/room/$code': typeof RoomCodeRoute
   '/room/new': typeof RoomNewRoute
   '/share/$id': typeof ShareIdRoute
+  '/sparks/draw': typeof SparksDrawRoute
+  '/sparks/reflections': typeof SparksReflectionsRoute
+  '/sparks/': typeof SparksIndexRoute
+  '/sparks/share/$token': typeof SparksShareTokenRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -110,12 +145,17 @@ export interface FileRoutesByTo {
   '/room/$code': typeof RoomCodeRoute
   '/room/new': typeof RoomNewRoute
   '/share/$id': typeof ShareIdRoute
+  '/sparks/draw': typeof SparksDrawRoute
+  '/sparks/reflections': typeof SparksReflectionsRoute
+  '/sparks': typeof SparksIndexRoute
+  '/sparks/share/$token': typeof SparksShareTokenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/join': typeof JoinRoute
+  '/sparks': typeof SparksRouteWithChildren
   '/async/$id': typeof AsyncIdRoute
   '/async/new': typeof AsyncNewRoute
   '/play/local': typeof PlayLocalRoute
@@ -125,6 +165,10 @@ export interface FileRoutesById {
   '/room/$code': typeof RoomCodeRoute
   '/room/new': typeof RoomNewRoute
   '/share/$id': typeof ShareIdRoute
+  '/sparks/draw': typeof SparksDrawRoute
+  '/sparks/reflections': typeof SparksReflectionsRoute
+  '/sparks/': typeof SparksIndexRoute
+  '/sparks/share/$token': typeof SparksShareTokenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -132,6 +176,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/join'
+    | '/sparks'
     | '/async/$id'
     | '/async/new'
     | '/play/local'
@@ -141,6 +186,10 @@ export interface FileRouteTypes {
     | '/room/$code'
     | '/room/new'
     | '/share/$id'
+    | '/sparks/draw'
+    | '/sparks/reflections'
+    | '/sparks/'
+    | '/sparks/share/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -155,11 +204,16 @@ export interface FileRouteTypes {
     | '/room/$code'
     | '/room/new'
     | '/share/$id'
+    | '/sparks/draw'
+    | '/sparks/reflections'
+    | '/sparks'
+    | '/sparks/share/$token'
   id:
     | '__root__'
     | '/'
     | '/admin'
     | '/join'
+    | '/sparks'
     | '/async/$id'
     | '/async/new'
     | '/play/local'
@@ -169,12 +223,17 @@ export interface FileRouteTypes {
     | '/room/$code'
     | '/room/new'
     | '/share/$id'
+    | '/sparks/draw'
+    | '/sparks/reflections'
+    | '/sparks/'
+    | '/sparks/share/$token'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   JoinRoute: typeof JoinRoute
+  SparksRoute: typeof SparksRouteWithChildren
   AsyncIdRoute: typeof AsyncIdRoute
   AsyncNewRoute: typeof AsyncNewRoute
   PlayLocalRoute: typeof PlayLocalRoute
@@ -188,6 +247,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sparks': {
+      id: '/sparks'
+      path: '/sparks'
+      fullPath: '/sparks'
+      preLoaderRoute: typeof SparksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/join': {
       id: '/join'
       path: '/join'
@@ -208,6 +274,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/sparks/': {
+      id: '/sparks/'
+      path: '/'
+      fullPath: '/sparks/'
+      preLoaderRoute: typeof SparksIndexRouteImport
+      parentRoute: typeof SparksRoute
+    }
+    '/sparks/reflections': {
+      id: '/sparks/reflections'
+      path: '/reflections'
+      fullPath: '/sparks/reflections'
+      preLoaderRoute: typeof SparksReflectionsRouteImport
+      parentRoute: typeof SparksRoute
+    }
+    '/sparks/draw': {
+      id: '/sparks/draw'
+      path: '/draw'
+      fullPath: '/sparks/draw'
+      preLoaderRoute: typeof SparksDrawRouteImport
+      parentRoute: typeof SparksRoute
     }
     '/share/$id': {
       id: '/share/$id'
@@ -272,13 +359,38 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AsyncIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sparks/share/$token': {
+      id: '/sparks/share/$token'
+      path: '/share/$token'
+      fullPath: '/sparks/share/$token'
+      preLoaderRoute: typeof SparksShareTokenRouteImport
+      parentRoute: typeof SparksRoute
+    }
   }
 }
+
+interface SparksRouteChildren {
+  SparksDrawRoute: typeof SparksDrawRoute
+  SparksReflectionsRoute: typeof SparksReflectionsRoute
+  SparksIndexRoute: typeof SparksIndexRoute
+  SparksShareTokenRoute: typeof SparksShareTokenRoute
+}
+
+const SparksRouteChildren: SparksRouteChildren = {
+  SparksDrawRoute: SparksDrawRoute,
+  SparksReflectionsRoute: SparksReflectionsRoute,
+  SparksIndexRoute: SparksIndexRoute,
+  SparksShareTokenRoute: SparksShareTokenRoute,
+}
+
+const SparksRouteWithChildren =
+  SparksRoute._addFileChildren(SparksRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   JoinRoute: JoinRoute,
+  SparksRoute: SparksRouteWithChildren,
   AsyncIdRoute: AsyncIdRoute,
   AsyncNewRoute: AsyncNewRoute,
   PlayLocalRoute: PlayLocalRoute,
@@ -292,13 +404,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
