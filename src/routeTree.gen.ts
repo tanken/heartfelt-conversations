@@ -13,6 +13,7 @@ import { Route as SparksRouteImport } from './routes/sparks'
 import { Route as JoinRouteImport } from './routes/join'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SparksIndexRouteImport } from './routes/sparks.index'
 import { Route as ShareIdRouteImport } from './routes/share.$id'
 import { Route as RoomNewRouteImport } from './routes/room.new'
 import { Route as RoomCodeRouteImport } from './routes/room.$code'
@@ -42,6 +43,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const SparksIndexRoute = SparksIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SparksRoute,
 } as any)
 const ShareIdRoute = ShareIdRouteImport.update({
   id: '/share/$id',
@@ -93,7 +99,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/join': typeof JoinRoute
-  '/sparks': typeof SparksRoute
+  '/sparks': typeof SparksRouteWithChildren
   '/async/$id': typeof AsyncIdRoute
   '/async/new': typeof AsyncNewRoute
   '/play/local': typeof PlayLocalRoute
@@ -103,12 +109,12 @@ export interface FileRoutesByFullPath {
   '/room/$code': typeof RoomCodeRoute
   '/room/new': typeof RoomNewRoute
   '/share/$id': typeof ShareIdRoute
+  '/sparks/': typeof SparksIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/join': typeof JoinRoute
-  '/sparks': typeof SparksRoute
   '/async/$id': typeof AsyncIdRoute
   '/async/new': typeof AsyncNewRoute
   '/play/local': typeof PlayLocalRoute
@@ -118,13 +124,14 @@ export interface FileRoutesByTo {
   '/room/$code': typeof RoomCodeRoute
   '/room/new': typeof RoomNewRoute
   '/share/$id': typeof ShareIdRoute
+  '/sparks': typeof SparksIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/join': typeof JoinRoute
-  '/sparks': typeof SparksRoute
+  '/sparks': typeof SparksRouteWithChildren
   '/async/$id': typeof AsyncIdRoute
   '/async/new': typeof AsyncNewRoute
   '/play/local': typeof PlayLocalRoute
@@ -134,6 +141,7 @@ export interface FileRoutesById {
   '/room/$code': typeof RoomCodeRoute
   '/room/new': typeof RoomNewRoute
   '/share/$id': typeof ShareIdRoute
+  '/sparks/': typeof SparksIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -151,12 +159,12 @@ export interface FileRouteTypes {
     | '/room/$code'
     | '/room/new'
     | '/share/$id'
+    | '/sparks/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/admin'
     | '/join'
-    | '/sparks'
     | '/async/$id'
     | '/async/new'
     | '/play/local'
@@ -166,6 +174,7 @@ export interface FileRouteTypes {
     | '/room/$code'
     | '/room/new'
     | '/share/$id'
+    | '/sparks'
   id:
     | '__root__'
     | '/'
@@ -181,13 +190,14 @@ export interface FileRouteTypes {
     | '/room/$code'
     | '/room/new'
     | '/share/$id'
+    | '/sparks/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   JoinRoute: typeof JoinRoute
-  SparksRoute: typeof SparksRoute
+  SparksRoute: typeof SparksRouteWithChildren
   AsyncIdRoute: typeof AsyncIdRoute
   AsyncNewRoute: typeof AsyncNewRoute
   PlayLocalRoute: typeof PlayLocalRoute
@@ -228,6 +238,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/sparks/': {
+      id: '/sparks/'
+      path: '/'
+      fullPath: '/sparks/'
+      preLoaderRoute: typeof SparksIndexRouteImport
+      parentRoute: typeof SparksRoute
     }
     '/share/$id': {
       id: '/share/$id'
@@ -295,11 +312,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface SparksRouteChildren {
+  SparksIndexRoute: typeof SparksIndexRoute
+}
+
+const SparksRouteChildren: SparksRouteChildren = {
+  SparksIndexRoute: SparksIndexRoute,
+}
+
+const SparksRouteWithChildren =
+  SparksRoute._addFileChildren(SparksRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   JoinRoute: JoinRoute,
-  SparksRoute: SparksRoute,
+  SparksRoute: SparksRouteWithChildren,
   AsyncIdRoute: AsyncIdRoute,
   AsyncNewRoute: AsyncNewRoute,
   PlayLocalRoute: PlayLocalRoute,
