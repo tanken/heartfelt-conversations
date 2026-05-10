@@ -1,65 +1,76 @@
-# v1.1 — Trust, Continuity & Reach
 
-Five focused upgrades. Each is independently shippable.
+# Sparks for Lift'd — Sister Prototype Plan
 
-## 1. Open Graph previews that render everywhere
+A new `/sparks` surface that demos how the Truth Spiral mechanic would live inside Lift'd's Connect feature. Truth Spiral routes (`/`, `/play/*`, `/room/*`, `/async/*`, `/recap/*`) stay untouched. Sparks gets its own visual language (Lift'd-warm, less cosmic) so it reads as a Connect feature, not the same game.
 
-The current `/share/$id` and `/recap/$id` routes set generic head meta with no `og:image`, so X/iMessage/Instagram show a blank or fallback unfurl.
+## Scope (Phase 1)
 
-- Add a server route `src/routes/api/og.$kind.$id.ts` (`kind = "answer" | "recap"`) that returns a 1200×630 PNG built with `@vercel/og` (Workers-compatible, ships WASM). Image renders the same gradient/layer styling as `ShareCard`/`RecapCard` but at OG ratio.
-- Update `share.$id.tsx` and `recap.$id.tsx` `head()` to include:
-  - `og:image`, `og:image:width=1200`, `og:image:height=630`, `og:image:alt`
-  - `twitter:card=summary_large_image`, `twitter:image`, `twitter:title`, `twitter:description`
-  - Absolute URLs (use request origin from loader, fall back to `VITE_PUBLIC_URL`).
-- Pull the actual prompt + truncated answer text into `og:title`/`og:description` via a tiny loader (`createServerFn`) that reads `answers`/`sessions` (public RLS already allows it).
-- Instagram: it doesn't unfurl links in posts, so we add a "Save image" CTA (already exists) and ensure stories preview correctly via `og:image`.
+- 4 depth modes: **Light**, **Honest**, **Deep**, **Prayerful** — all visible to everyone, Prayerful clearly labeled with a faith icon + "faith-shaped, optional" tagline.
+- Three play modes: **Solo**, **With a friend** (link share), **Group round** (pass-the-device).
+- Per card actions: Answer, Pass, Shuffle.
+- After answering, card afterlife = full set: **Save as Reflection**, **Save as Prayer**, **Save as Gratitude**, **Save as Action item**, **Share to Connect**.
+- Saved entries live in a local "Reflections" drawer (mock Lift'd journal) so users can see the afterlife loop end-to-end without wiring real Lift'd APIs.
 
-## 2. Reconnect & resume in live rooms
+## Routes
 
-`room.$code.tsx` currently stores nothing about *who* the local user is in the session — a refresh creates a fresh anon player.
+```text
+/sparks                  Connect-style home: depth picker, mode picker, recent reflections
+/sparks/draw             Active card view (depth + mode in URL search params)
+/sparks/share/$id        Sent-to-friend card landing
+/sparks/reflections      Local journal of saved cards by type
+```
 
-- On join, store `{ sessionId, playerId, code }` in `localStorage` under `ts:room:<code>`.
-- On mount: if a stored playerId exists and is still in `session_players`, rebind without inserting a new row. Otherwise re-insert.
-- Add a heartbeat: every 15s update `session_players.joined_at` (reuse column as `last_seen`); show a "Reconnecting…" banner when the realtime channel emits `CHANNEL_ERROR`/`TIMED_OUT` and auto-resubscribe with backoff (1s, 2s, 4s, max 8s).
-- If `current_player_id` matches the stored playerId on resume, the turn UI re-enables automatically (already driven by state).
-- Add an explicit "Resume last room" chip on the landing page when `localStorage` has any active `ts:room:*` key with `closed_at` null.
+All under a shared `/sparks` layout with a soft Lift'd header (not the cosmic spiral hero).
 
-## 3. Report button + hide-from-shares
+## Decks
 
-- Migration: new table `reports (id, target_type 'answer'|'session', target_id uuid, reason text, created_at)` and a column `answers.is_hidden boolean default false`. RLS: public insert into `reports`; public select on answers stays but `/share/$id` filters `is_hidden = false`.
-- Tiny `<ReportButton />` component opens a popover with 4 reasons (Harmful, Personal info, Spam, Other + free text) → inserts into `reports`.
-- Threshold rule (client-side, idempotent): if `reports` count for an answer ≥ 3, set `answers.is_hidden = true` (RLS already allows update). Cheap and good enough without a backend job.
-- Show on: each answer in `CardStage` recent list (when `dbBacked`), the `share.$id` page, and recap featured-quote area.
-- Hidden answers render as "This answer was hidden" on `/share/$id` and are skipped in recap "featured quote" selection.
+Curated, ~20 prompts per depth × 4 depths = ~80 cards, stored as a static TS module (`src/lib/sparks/decks.ts`). No DB writes for v1 — decks are local data so the prototype is fast and offline-friendly. Prayerful deck is gentle/inclusive, not denominational.
 
-## 4. Accessibility
+## Data & persistence
 
-- `Spiral` and trailer animation: read `prefers-reduced-motion` via a `useReducedMotion()` hook; when true, render a static SVG (no rotation, no opacity pulses) and set `framer-motion` `MotionConfig reducedMotion="user"` at the root.
-- Card draw + transitions in `CardStage`: respect the same hook (instant fade instead of slide/rotate).
-- Add ARIA: `role="status" aria-live="polite"` on layer indicator, `aria-label` on icon-only buttons (Copy, Report, Share, Avatar picker), `aria-current="step"` on the active layer pip, focus ring tokens via `focus-visible:ring-2 focus-visible:ring-gold`.
-- Keyboard: `Cmd/Ctrl+Enter` submits the answer textarea, `Esc` clears, room code input auto-advances + accepts paste of full code, `Tab` order audited on landing CTAs.
-- Add a "Reduce motion" toggle in a small footer settings menu, persisted to `localStorage` (`ts:a11y:reducedMotion`) — overrides system preference when set.
+- **localStorage only** for v1 (`liftd:sparks:reflections`, `liftd:sparks:prefs`).
+- Each saved entry: `{ id, prompt, answer, depth, type: 'reflection'|'prayer'|'gratitude'|'action', createdAt }`.
+- Friend-share uses an encoded URL payload (no backend round-trip needed) so `/sparks/share/$id` can render without a session.
+- No Supabase changes. No auth. Truth Spiral's tables stay as-is.
 
-## 5. Internal admin view
+## Visual direction
 
-- New route `/admin` gated by a query token: `?key=<ADMIN_KEY>` matched against `import.meta.env.VITE_ADMIN_KEY` (set via secret). Not bulletproof but appropriate for an internal dashboard with no auth system. Memoise the unlocked state in `sessionStorage`.
-- Migration: add `share_clicks (id, target_type, target_id, created_at, referrer text, ua text)`. Increment via a tiny `/api/track-share` server route called from `/share/$id` and `/recap/$id` on mount (debounced once per pageview via sessionStorage key).
-- Admin view shows:
-  - Rooms today / this week / total (group by `mode`)
-  - Completion depth distribution (max layer reached per closed session, pulled from `MAX(answers.layer)` per session)
-  - Top share links by click count (join `share_clicks` to `answers`/`sessions`)
-  - Reports queue with one-click "hide answer" / "dismiss"
-- Read via `createServerFn` using `supabaseAdmin` so we don't widen RLS further. Auth: server fn checks `process.env.ADMIN_KEY` against an `x-admin-key` header set client-side from the unlocked state.
+Distinct from Truth Spiral's cosmic palette:
+- Warm cream + sage + soft amber (Lift'd-leaning), rounded soft cards, hand-drawn-feel divider.
+- Depth chips color-coded: Light=amber, Honest=rose, Deep=indigo, Prayerful=sage with a small flame glyph.
+- Tokens added to `src/styles.css` under a `.sparks` scope so they don't bleed into Truth Spiral routes.
 
-## Technical details
+## Components
 
-- Packages: `@vercel/og` (works on Cloudflare Workers via WASM). No sharp/canvas.
-- DB migration combines: `answers.is_hidden`, `reports`, `share_clicks`. All RLS public-insert / restricted-update where appropriate.
-- `og.$kind.$id.ts` uses dynamic font fetch from a CDN at build, cached with `Cache-Control: public, max-age=86400, immutable`.
-- All five features can ship in parallel; admin and OG depend on the new tables/route, so we run the migration first.
+```text
+src/components/sparks/
+  SparksHeader.tsx        Lift'd-style top bar with Connect breadcrumb
+  DepthPicker.tsx         4 mode chips with descriptions + pass-safe note
+  SparkCard.tsx           Prompt card, action row, depth badge
+  AfterlifeMenu.tsx       Reflection / Prayer / Gratitude / Action / Share to Connect
+  ReflectionList.tsx      Saved entries grouped by type
+  PassSafeNote.tsx        Small reminder: "You can always pass."
+```
 
-## Out of scope
+## Cross-link from Truth Spiral
 
-- Real auth-based moderation queue (we use a simple report-count threshold).
-- Custom domains for OG (uses request origin).
-- Realtime presence indicators beyond simple last-seen heartbeat.
+Add a single small footer link on the landing page: "Built for Lift'd? See it as Sparks →" pointing to `/sparks`. Non-intrusive, keeps the two prototypes discoverable without merging.
+
+## Out of scope (explicit)
+
+- Group admin controls / deck gating
+- Nomi / AI-personalized prompts (Phase 3)
+- Real Lift'd backend integration (journal, groups, Connect feed)
+- Telegram, sermon mode, session log integration
+- Any database migrations
+
+## Technical notes
+
+- Pure frontend feature; no server functions, no Supabase, no env vars.
+- Reuses existing `framer-motion`, shadcn primitives, and `useReducedMotion` hook.
+- Each route file gets its own `head()` with Sparks-specific OG title/description.
+- Friend-share payload kept under ~1.5KB (URL-safe base64 of `{prompt, depth, fromName}`); answer text is never in the URL — recipient writes their own.
+
+## Deliverable
+
+A self-contained `/sparks` flow you can demo to the Lift'd team: pick depth → draw → answer → save into one of four journal types or share to a "friend." Truth Spiral remains fully intact alongside it.
