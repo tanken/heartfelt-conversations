@@ -5,18 +5,39 @@ import { SiteHead } from "@/components/SiteHead";
 import { layerInfo, LAYERS } from "@/lib/spiral";
 import { RecapCard } from "@/components/RecapCard";
 import { CopyButton } from "@/components/CopyButton";
+import { ReportButton } from "@/components/ReportButton";
 import { downloadNodeAsPng } from "@/lib/share";
+import { trackShareClick } from "@/lib/reports";
+import { getRecapMeta } from "@/lib/og.functions";
 
 export const Route = createFileRoute("/recap/$id")({
   component: SharedRecap,
-  head: ({ params }) => ({
-    meta: [
-      { title: "Connection Recap — Truth Spiral" },
-      { name: "description", content: "A spiral, captured." },
-      { property: "og:title", content: "We spiraled together." },
-      { property: "og:url", content: `/recap/${params.id}` },
-    ],
-  }),
+  loader: ({ params }) => getRecapMeta({ data: { id: params.id } }),
+  head: ({ loaderData, params }) => {
+    const origin = loaderData?.origin ?? "";
+    const ogImg = `${origin}/og-default.jpg`;
+    const url = `${origin}/recap/${params.id}`;
+    const title = loaderData?.title ?? "Connection Recap";
+    const desc = loaderData?.description ?? "A spiral, captured.";
+    return {
+      meta: [
+        { title: `${title} — Truth Spiral` },
+        { name: "description", content: desc },
+        { property: "og:type", content: "article" },
+        { property: "og:title", content: title },
+        { property: "og:description", content: desc },
+        { property: "og:url", content: url },
+        { property: "og:image", content: ogImg },
+        { property: "og:image:width", content: "1200" },
+        { property: "og:image:height", content: "640" },
+        { property: "og:image:alt", content: "Truth Spiral" },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: desc },
+        { name: "twitter:image", content: ogImg },
+      ],
+    };
+  },
 });
 
 type AnswerRow = {
