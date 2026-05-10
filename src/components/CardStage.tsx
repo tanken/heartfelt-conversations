@@ -252,15 +252,19 @@ export function CardStage({
                   <p className="text-sm text-muted-foreground mt-1 italic">"{a.text}"</p>
                 )}
                 {dbBacked && a.action !== "reflect" && (
-                  <button
-                    onClick={async () => {
-                      const url = await shareAnswer(a.id);
-                      window.open(url, "_blank");
-                    }}
-                    className="mt-2 text-[11px] uppercase tracking-widest text-gold hover:underline"
-                  >
-                    Share this answer →
-                  </button>
+                  <div className="mt-2 flex items-center gap-3">
+                    <button
+                      onClick={async () => {
+                        const url = await shareAnswer(a.id);
+                        window.open(url, "_blank");
+                      }}
+                      aria-label="Share this answer"
+                      className="text-[11px] uppercase tracking-widest text-gold hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 rounded"
+                    >
+                      Share this answer →
+                    </button>
+                    <ReportButton targetType="answer" targetId={a.id} />
+                  </div>
                 )}
               </li>
             ))}
