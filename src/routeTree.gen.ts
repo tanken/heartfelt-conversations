@@ -14,6 +14,7 @@ import { Route as JoinRouteImport } from './routes/join'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SparksIndexRouteImport } from './routes/sparks.index'
+import { Route as SparksDrawRouteImport } from './routes/sparks.draw'
 import { Route as ShareIdRouteImport } from './routes/share.$id'
 import { Route as RoomNewRouteImport } from './routes/room.new'
 import { Route as RoomCodeRouteImport } from './routes/room.$code'
@@ -47,6 +48,11 @@ const IndexRoute = IndexRouteImport.update({
 const SparksIndexRoute = SparksIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => SparksRoute,
+} as any)
+const SparksDrawRoute = SparksDrawRouteImport.update({
+  id: '/draw',
+  path: '/draw',
   getParentRoute: () => SparksRoute,
 } as any)
 const ShareIdRoute = ShareIdRouteImport.update({
@@ -109,6 +115,7 @@ export interface FileRoutesByFullPath {
   '/room/$code': typeof RoomCodeRoute
   '/room/new': typeof RoomNewRoute
   '/share/$id': typeof ShareIdRoute
+  '/sparks/draw': typeof SparksDrawRoute
   '/sparks/': typeof SparksIndexRoute
 }
 export interface FileRoutesByTo {
@@ -124,6 +131,7 @@ export interface FileRoutesByTo {
   '/room/$code': typeof RoomCodeRoute
   '/room/new': typeof RoomNewRoute
   '/share/$id': typeof ShareIdRoute
+  '/sparks/draw': typeof SparksDrawRoute
   '/sparks': typeof SparksIndexRoute
 }
 export interface FileRoutesById {
@@ -141,6 +149,7 @@ export interface FileRoutesById {
   '/room/$code': typeof RoomCodeRoute
   '/room/new': typeof RoomNewRoute
   '/share/$id': typeof ShareIdRoute
+  '/sparks/draw': typeof SparksDrawRoute
   '/sparks/': typeof SparksIndexRoute
 }
 export interface FileRouteTypes {
@@ -159,6 +168,7 @@ export interface FileRouteTypes {
     | '/room/$code'
     | '/room/new'
     | '/share/$id'
+    | '/sparks/draw'
     | '/sparks/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -174,6 +184,7 @@ export interface FileRouteTypes {
     | '/room/$code'
     | '/room/new'
     | '/share/$id'
+    | '/sparks/draw'
     | '/sparks'
   id:
     | '__root__'
@@ -190,6 +201,7 @@ export interface FileRouteTypes {
     | '/room/$code'
     | '/room/new'
     | '/share/$id'
+    | '/sparks/draw'
     | '/sparks/'
   fileRoutesById: FileRoutesById
 }
@@ -244,6 +256,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/sparks/'
       preLoaderRoute: typeof SparksIndexRouteImport
+      parentRoute: typeof SparksRoute
+    }
+    '/sparks/draw': {
+      id: '/sparks/draw'
+      path: '/draw'
+      fullPath: '/sparks/draw'
+      preLoaderRoute: typeof SparksDrawRouteImport
       parentRoute: typeof SparksRoute
     }
     '/share/$id': {
@@ -313,10 +332,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface SparksRouteChildren {
+  SparksDrawRoute: typeof SparksDrawRoute
   SparksIndexRoute: typeof SparksIndexRoute
 }
 
 const SparksRouteChildren: SparksRouteChildren = {
+  SparksDrawRoute: SparksDrawRoute,
   SparksIndexRoute: SparksIndexRoute,
 }
 
