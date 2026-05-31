@@ -94,6 +94,104 @@ Browser → TanStack Router → Component
 
 Live rooms use **Supabase Realtime** channels. Game state (current layer, active card, answers, turn order) is synchronized across all connected clients via broadcast and Postgres changes. If a player disconnects and reconnects, the app restores their session state from `localStorage` and rejoins the room automatically.
 
+### Diagrams
+
+#### Live room lifecycle
+
+```text
+   ┌────────────┐   create room    ┌──────────────────┐
+   │  Host      │ ───────────────► │ sessions row     │
+   │ /room/new  │                  │  room_code: ABCD │
+   └─────┬──────┘                  │  status: open    │
+         │ share /room/ABCD        └────────┬─────────┘
+         ▼                                  │
+   ┌────────────┐   insert player  ┌────────▼─────────┐
+   │  Guests    │ ───────────────► │ session_players  │
+   │ /room/ABCD │                  │  turn_order: n   │
+   └─────┬──────┘                  └────────┬─────────┘
+         │ Begin spiral                     │
+         ▼                                  ▼
+   ┌─────────────────────────────────────────────────┐
+   │ sessions.current_card_id / current_player_id    │
+   │   advances on every answer (rotates players,    │
+   │   bumps layer after 3 answers, max layer 5)     │
+   └────────────────────┬────────────────────────────┘
+                        │ Close spiral
+                        ▼
+                ┌───────────────┐
+                │ share_token   │ ──► /recap/$token
+                │ status: closed│
+                └───────────────┘
+```
+
+#### Realtime sync & reconnect
+
+```text
+  Client A                  Supabase Realtime              Client B
+  ────────                  ─────────────────              ────────
+  insert answer ──────────► postgres_changes ──────────►  setAnswers([...])
+  update session ─────────► channel: room:<id> ────────►  setSession(new)
+                                  │
+                                  │ on CHANNEL_ERROR / TIMED_OUT / CLOSED
+                                  ▼
+                            exponential backoff
+                            (1s → 2s → 4s → 8s cap)
+                                  │
+                                  ▼
+                            re-subscribe + heartbeat
+                            (15s joined_at touch)
+                                  │
+                                  ▼
+                       recallRoom(code) from localStorage
+                       restores playerId → resumes turn
+```
+
+#### Share link flow
+
+```text
+  Answer card                                  Recipient
+  ───────────                                  ─────────
+  shareAnswer(id) ─► answers.is_shared = true
+         │
+         ▼
+  /share/$id ─────► loader: getShareMeta()  ─► <head>
+                      title, description,         og:title
+                      og:image, twitter:card      og:image (1200×640)
+                                                  twitter:summary_large_image
+         │
+         ▼
+  trackShareClick("answer", id)        ──►  share_clicks table
+         │                                   (powers admin dashboard)
+         ▼
+  ReportButton ─► reports table ─► is_hidden flag hides from /share/$id
+```
+
+#### Recap generation
+
+```text
+  Host clicks "Close spiral"
+         │
+         ▼
+  sessions.update({
+    share_token: makeToken(),
+    status: "closed",
+    closed_at: now()
+  })
+         │
+         ▼
+  navigate → /recap/$token
+         │
+         ▼
+  loader: fetch session + answers + cards by share_token
+         │
+         ▼
+  RecapCard renders 5-layer spiral:
+    • per-layer prompt + answers
+    • avatars + player names
+    • exportable as PNG (html-to-image)
+    • shareable URL with OG preview
+```
+
 ---
 
 ## Tech Stack
